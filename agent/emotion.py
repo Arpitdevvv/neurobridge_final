@@ -1,44 +1,61 @@
 import os
 import sys
-import google.generativeai as genai
-from transformers import pipeline
+from google import genai
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response
 from datetime import datetime
 
 
+load_dotenv()
+
 # --- Emotion Agent Class ---
 class EmotionAgent:
-    """
-    An agent that detects a user's emotional state from text and
-    adapts its conversational tone accordingly using an LLM.
-    """
-    def __init__(self, api_key: str):
-        print("Initializing Emotion Agent...")
-        if not api_key:
-            raise ValueError("Google API Key not found.")
-        genai.configure(api_key=api_key)
-        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        try:
-            print("Loading emotion detection model...")
-            self.emotion_classifier = pipeline(
-                "text-classification", 
-                model="michellejieli/emotion_text_classifier"
-            )
-            print("Emotion Agent is ready.")
-        except Exception as e:
-            print(f"Error loading Hugging Face model: {e}", file=sys.stderr)
-            sys.exit(1)
-
+# --- Emotion Agent Class ---
+    def __init__(self, api_key):
+        self.client = genai.Client(api_key=api_key)
     def detect_emotion(self, text: str) -> str:
         try:
-            results = self.emotion_classifier(text)
-            return results[0]['label']
-        except Exception as e:
-            print(f"Could not classify emotion: {e}", file=sys.stderr)
+            prompt = f"""
+            Analyze the emotion of this text.
+
+            Text:
+            {text}
+
+            Return ONLY one word from:
+            sadness, joy, anger, fear, surprise, disgust, neutral
+            """
+
+            response = self.client.models.generate_content(
+    model="gemini-1.5-flash",
+    contents=prompt
+)
+
+            emotion = response.text.strip().lower()
+
+            valid_emotions = [
+                "sadness",
+                "joy",
+                "anger",
+                "fear",
+                "surprise",
+                "disgust",
+                "neutral"
+            ]
+
+            if emotion in valid_emotions:
+                return emotion
+
             return "neutral"
 
+        except Exception as e:
+            print(f"Emotion detection failed: {e}")
+            return "neutral"
+
+
     def adapt_and_respond(self, user_input: str) -> tuple[str, str]:
+
         detected_emotion = self.detect_emotion(user_input)
+
         tone_guidelines = {
             'sadness': "Respond with empathy, gentleness, and support.",
             'joy': "Share in their happiness! Respond with a celebratory and positive tone.",
@@ -48,19 +65,40 @@ class EmotionAgent:
             'disgust': "Respond with a neutral, understanding tone.",
             'neutral': "Respond in a standard, helpful, and friendly tone."
         }
-        instructional_prompt = tone_guidelines.get(detected_emotion, tone_guidelines['neutral'])
+
+        instructional_prompt = tone_guidelines.get(
+            detected_emotion,
+            tone_guidelines['neutral']
+        )
+
         final_prompt = f"""
-        **System Role:** You are a caring AI assistant. Your goal is to be understanding and empathetic.
-        **Tone and Style Guideline:** {instructional_prompt}
-        **User's Message:** "{user_input}"
+        **System Role:** You are a caring AI assistant.
+        Your goal is to be understanding and empathetic.
+
+        **Tone and Style Guideline:**
+        {instructional_prompt}
+
+        **User's Message:**
+        "{user_input}"
+
         **Your Response:**
         """
+
         try:
-            response = self.gemini_model.generate_content(final_prompt)
+            response = self.client.models.generate_content(
+    model="gemini-1.5-flash",
+    contents=final_prompt
+)
+
             return response.text.strip(), detected_emotion
+
         except Exception as e:
             print(f"Error calling Gemini API: {e}", file=sys.stderr)
-            return "I'm having trouble connecting right now.", "neutral"
+
+            return (
+                "I'm having trouble connecting right now.",
+                "neutral"
+            )
 
 
 # --- HTML Template ---
@@ -309,5 +347,11 @@ def get_response():
 
 if __name__ == '__main__':
     print("Starting Emotion Agent server...")
-    print("Open your browser and go to http://127.0.0.1:5000")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    print("Open your browser and go to http://127.0.0.1:5001")
+
+    app.run(
+        host='127.0.0.1',
+        port=5001,
+        debug=False,
+        
+    )

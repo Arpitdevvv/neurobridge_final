@@ -131,6 +131,7 @@ HTML_PAGE = """
 def rewrite_text():
     """Rewrite the provided text to a 6th-grade reading level."""
     data = request.get_json()
+
     if not data or "text" not in data:
         return jsonify({"error": "No text provided in the request body."}), 400
 
@@ -145,8 +146,12 @@ def rewrite_text():
                 return jsonify({"rewritten_text": rewritten_text}), 200
             except Exception:
                 time.sleep(2 ** i)
+
         raise Exception("Max retries exceeded")
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -160,4 +165,9 @@ def index():
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+    host="127.0.0.1",
+    port=10000,
+    debug=False,
+    use_reloader=False
+)
