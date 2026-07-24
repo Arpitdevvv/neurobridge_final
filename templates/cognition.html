@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NeuroBridge Cognition Agent</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Correct CSS Path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cognition.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🧠 NeuroBridge Cognition Agent</h1>
+
+    <p class="subtitle">
+        AI-powered Cognitive Assessment for Personalized Learning
+    </p>
+
+    <!-- Problem Selection -->
+
+    <div class="section">
+
+        <h3>📚 Step 1 — Select Your Learning Difficulty</h3>
+
+        <p>
+            Choose the statement that best describes your current situation.
+        </p>
+
+        <select id="problem">
+            <option>I don't understand the concept.</option>
+            <option>I understand the concept but forget it quickly.</option>
+            <option>I know the concept but cannot solve questions.</option>
+            <option>I lose focus while studying.</option>
+        </select>
+
+    </div>
+
+    <!-- Confidence -->
+
+    <div class="section">
+
+        <h3 id="dynamicTitle">🧠 Self Assessment</h3>
+
+        <p id="dynamicQuestion">
+            Move the slider below.
+        </p>
+
+        <input
+            type="range"
+            id="confidence"
+            min="1"
+            max="10"
+            value="5"
+            oninput="confidenceValue.innerHTML=this.value">
+
+        <p>
+            <b>Rating:</b>
+            <span id="confidenceValue">5</span>/10
+        </p>
+
+    </div>
+
+    <!-- Analyze -->
+
+    <button onclick="analyzeStudent()">
+        ✨ Analyze Cognitive State
+    </button>
+
+    <!-- Output -->
+
+    <div class="analysis-box">
+
+        <h2>🧠 AI Cognitive Analysis</h2>
+
+        <p class="small">
+            Your personalized analysis will appear below.
+        </p>
+
+        <pre id="output">
+Waiting for analysis...
+        </pre>
+
+    </div>
+
+</div>
+
+<!-- Correct JS Path -->
+<script src="{{ url_for('static', filename='js/cognition.js') }}"></script>
+
+</body>
+</html>
